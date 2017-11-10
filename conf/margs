@@ -1,0 +1,9 @@
+[processbar]
+width = 50
+
+[md5_salt]
+secretkey = mynameissalt
+
+[download_dir]
+dir = E:\pycharn\socket_train\FTP_demo\download
+

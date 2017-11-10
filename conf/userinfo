@@ -1,0 +1,7 @@
+[egon]
+passwd=xinwei
+disk=20
+
+[alex]
+passwd=alex123
+disk=40
