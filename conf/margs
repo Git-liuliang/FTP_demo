@@ -4,6 +4,15 @@ width = 50
 [md5_salt]
 secretkey = mynameissalt
 
+[server]
+ip = 127.0.0.1
+port = 8888
+listen = 5
+
+[client]
+ip = 127.0.0.1
+port = 8888
+
 [download_dir]
 dir = E:\pycharn\socket_train\FTP_demo\download
 

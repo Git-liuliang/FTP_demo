@@ -9,6 +9,9 @@ from lib.comm import Processbar as p, Md5_salt
 from lib.auth import Auth
 from lib.comm import *
 
+# timeout = 20
+# socket.setdefaulttimeout(timeout)
+
 class FTP_server:
     def __init__(self,bind_ip,bind_port,max_wait):
         self.ftpserver = socket.socket()
@@ -27,48 +30,9 @@ class FTP_server:
     def close(self):
         self.ftpserver.close()
 
-    def hert(self):
-        print('消息来自>>', self.re_addr)
-        msg0 = self.conn.recv(4)
-        header_len = struct.unpack('i', msg0)[0]
-        msg1 = self.conn.recv(header_len)
-        total_size = json.loads(msg1.decode('utf-8'))['total_size']
-        rec_data = 0
-        total = b''
-        if total_size > 0:
-            while rec_data < total_size:
-                data = self.conn.recv(4)
-                total = total + data
-                rec_data += len(data)
-            print(total.decode('utf-8'))
-        self.close_request(self.conn)
-
-    def msg_recv(self):
-        self.conn, self.re_addr = self.get_request()
-        print('消息来自>>', self.re_addr)
-        while True:
 
 
-            msg0 = self.conn.recv(4)
-            header_len = struct.unpack('i', msg0)[0]
-            msg1 = self.conn.recv(header_len)
-            # total_size = json.loads(msg1.decode('utf-8'))['total_size']
-            username = json.loads(msg1.decode('utf-8'))['username']
-            passwd = json.loads(msg1.decode('utf-8'))['passwd']
-            print(username)
-            print(passwd)
-            # rec_data = 0
-            # total = b''
-            # if total_size > 0:
-            #     while rec_data < total_size:
-            #         data = self.conn.recv(4)
-            #         total = total + data
-            #         rec_data += len(data)
-            #     print(total.decode('utf-8'))
-        self.close_request(self.conn)
 
-
-        self.close()
 
 
     def cmd_recv(self,username):
@@ -119,8 +83,7 @@ class FTP_server:
 
 
     def download(self,current_dir):
-        # Auth.client_connect_auth(self.ftpclient)
-        # Auth.client_user_auth(self.ftpclient)
+
         while True:
             msg = self.conn.recv(1024).decode('utf-8')
 
@@ -130,7 +93,8 @@ class FTP_server:
             print(fsize)
             # filename = os.path.split(msg)[1]
             # print(filename.)
-            header = Make_header.makeheader(fsize, msg)
+            md5 = Md5_salt.file_md5(filepath)
+            header = Make_header.makeheader(fsize, msg,md5)
 
             self.conn.send(header[0])
             self.conn.send(header[1])
@@ -138,10 +102,9 @@ class FTP_server:
                 rec_size = 0
                 for line in f:
                     self.conn.send(line)
-                    time.sleep(0.3)
                     rec_size +=len(line)
-                    percent = rec_size/fsize
-                    p.process(percent)
+                    # percent = rec_size/fsize
+                    # p.process(percent)
 
 
 
@@ -153,46 +116,55 @@ class FTP_server:
             self.conn.send(header[0])
             self.conn.send(header[1])
             self.conn.send(msg)
-            # self.conn.close()
+
 
     def run(self,current_dir):
-        # print("starting........")
-        # self.conn, self.re_addr = self.get_request()
-        # Auth.server_connect_auth(self.conn)
-        # Auth.server_user_auth(self.conn)
-        print("starting........")
-        #####################
 
-        ######################
-        # while True:
         re_l = self.conn.recv(4)
         re_len = struct.unpack('i', re_l)[0]
         dd = self.conn.recv(re_len)
         ss = json.loads(dd.decode('utf-8'))['total_size']
         filename = json.loads(dd.decode('utf-8'))['file_name']
         md5 = json.loads(dd.decode('utf-8'))['md5']
-        rec_data = 0
-        total = b''
-        print('ss', ss)
-        if ss > 0:
-            # while rec_data < ss:
-            #     data = self.conn.recv(102)
-            #     total = total + data
-            #     rec_data += len(data)
-            #
-            # path = os.path.join(current_dir, filename)
-            # with open(path, 'wb') as w:
-            #     w.write(total)
-            # print("upload done")
-            while rec_data < ss:
-                data = self.conn.recv(102)
-                total = total + data
-                rec_data += len(data)
+        path = os.path.join(current_dir, '.'+filename)
+        real_path = os.path.join(current_dir, filename)
+        print(path)
 
-                path = os.path.join(current_dir, filename)
-                with open(path, 'ab') as w:
-                    w.write(data)
-            print("upload done")
+        try:
+            fsize = os.path.getsize(path)
+            print('last size',fsize)
+            self.conn.send(str(fsize).encode('utf-8'))
+            rec_data = fsize
+            total = b''
+            print('ss', ss)
+            if ss > 0:
+                while rec_data < ss :
+                    data = self.conn.recv(102)
+                    total = total + data
+                    rec_data += len(data)
+                    print(data)
+
+                    with open(path, 'ab') as w:
+                        w.write(data)
+                os.rename(path,real_path)
+                print("upload done")
+
+
+        except FileNotFoundError:
+            print('new file')
+            rec_data = 0
+            total = b''
+            print('ss', ss)
+            if ss > 0:
+
+                while rec_data < ss:
+                    data = self.conn.recv(1024)
+                    total = total + data
+                    rec_data += len(data)
+                    with open(path, 'ab') as w:
+                        w.write(data)
+                os.rename(path, real_path)
+                print("upload done")
 
 
     def server_connect_auth(self):

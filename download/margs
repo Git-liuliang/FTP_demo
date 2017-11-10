@@ -1,6 +1,0 @@
-[processbar]
-width = 50
-
-[md5_salt]
-secretkey = mynameissalt
-

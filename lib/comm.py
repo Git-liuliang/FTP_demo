@@ -109,4 +109,19 @@ class Make_header:
         msg_list = [msg0, msg1]
         return msg_list
 
+class Timer:
+
+        @classmethod
+        def  circle(cls,t):
+            dot = 'connecting .'
+            while t > 0:
+                dot = dot + '.'
+                time.sleep(0.6)
+                print('\r',dot,file=sys.stdout,flush=True,end='')
+                t -=2
+
+
+
+
+
 
